@@ -1,0 +1,34 @@
+name: Keep Streak Green
+
+on:
+  schedule:
+    # Runs every day at 00:05 Bangladesh Time (18:05 UTC previous day)
+    - cron: "5 18 * * *"
+  workflow_dispatch: {}   # Lets you run it manually to test
+
+permissions:
+  contents: write
+
+jobs:
+  heartbeat:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Update heartbeat file
+        run: |
+          echo "$(date -u +'%Y-%m-%d %H:%M:%S UTC') — heartbeat" >> .keepalive
+
+      - name: Commit & push if changed
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+          if [ -n "$(git status --porcelain)" ]; then
+            git add .keepalive
+            git commit -m "chore: daily heartbeat $(date -u +%Y-%m-%d)"
+            git push
+          else
+            echo "No changes to commit."
+          fi
+
